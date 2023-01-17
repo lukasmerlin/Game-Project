@@ -1,6 +1,19 @@
 
 // Display starting screen
-document.querySelector('#game').innerHTML = "Press Enter to Start";
+const startScreen = document.createElement('div');
+const startScreenText = document.createElement('p');
+startScreenText.style.color = "red";
+startScreenText.style.fontSize = "50px";
+startScreen.style.position = "absolute";
+startScreen.style.top = "50%";
+startScreen.style.left = "50%";
+startScreen.style.transform = "translate(-50%, -50%)";
+startScreenText.innerHTML = "Press Enter to start";
+startScreen.appendChild(startScreenText);
+document.querySelector('body').appendChild(startScreen);
+
+
+
 
 // Listen for key press event
 document.addEventListener("keydown", startGame);
@@ -9,7 +22,7 @@ function startGame(event) {
     // Check if key pressed is the enter key
     if (event.code === "Enter") {
         // Remove starting screen message
-        document.querySelector('#game').innerHTML = "";
+        document.querySelector('div').remove();
         // Remove event listener
         document.removeEventListener("keydown", startGame);
         // Start the game
@@ -25,6 +38,7 @@ function start() {
     canvas.height = innerHeight;
     const gravity = 0.5;
 
+
     class Player {
         constructor(){
             this.position = {x: 100, y: 100};
@@ -32,6 +46,8 @@ function start() {
             this.height = 100;
             this.velocity = {x: 0, y: 0};
             this.fillRect = 'red';
+            this.onGround = false;
+            this.health = 100;
         }
         
     
@@ -55,17 +71,25 @@ function start() {
             for (const platform of platforms) {
                 if (this.position.x + this.width >= platform.position.x && this.position.x <= platform.position.x + platform.width) {
                     if (this.position.y + this.height >= platform.position.y && this.position.y <= platform.position.y + platform.height) {
-                        // Adjust player's position to be on top of platform
-                         this.position.y = platform.position.y - this.height;
-                        this.velocity.y = 0;
+                         // Check if player is colliding from below
+                         if (this.velocity.y > 0) {
+                             // Adjust player's position to be on top of platform
+                             this.position.y = platform.position.y - this.height;
+                             this.velocity.y = 0;
+                             this.onGround = true;
+                         } else {
+                             // Player is jumping from below
+                             // Do nothing
+                         }
                     }
-                }
+                 }
             }
         
             // Check for collision with floor
             if (this.position.y + this.height >= floor.position.y) {
                 this.position.y = floor.position.y - this.height;
                 this.velocity.y = 0;
+                this.onGround = true;
             }
     
             // Check for collision with edges of canvas
@@ -78,13 +102,57 @@ function start() {
                 this.velocity.x = 0;
                 console.log("moving outside the bounds")
             }
+            if (this.position.y <= 0) {
+                this.position.y = 0;
+                this.velocity.y = 0;
+            }
+
+            for (const deathHole of deathHoles) {
+                if (this.position.x + this.width > deathHole.x && this.position.x < deathHole.x + deathHole.width) {
+                    if (this.position.y + this.height > deathHole.y && this.position.y < deathHole.y + deathHole.height) {
+                        // Player has fallen into a death hole
+                        // Trigger death event
+                        this.health = 0;
+                        this.velocity.y += gravity;
+                        console.log("You fell into a death hole and died!");
+                    }
+                }
+            }
             
+            if (this.health <= 0) {
+                // Player has died
+                // Trigger game over event
+                console.log("Game over!");
+                //restartGame();
+            }
         
             this.draw();
             weapons[0].draw();
         }
         
     }
+
+    class DeathHole {
+        constructor(x, y, width, height) {
+            this.x = x;
+            this.y = y;
+            this.width = width;
+            this.height = height;
+            this.fillStyle = 'black';
+        }
+
+        draw() {
+            c.fillStyle = this.fillStyle;
+            c.fillRect(this.x, this.y, this.width, this.height);
+        }
+    }
+    
+    const deathHoles = [
+        new DeathHole(700, canvas.height-25, 300, 50),
+        new DeathHole(1000, canvas.height-25, 500, 50)
+    ];
+
+    
     
     
     class Platform {
@@ -220,13 +288,6 @@ function start() {
         }
     }
     
-    const player = new Player();
-    const platforms = [new Platform({x:100, y:200}), new Platform({x: 500, y: 300})];
-    let enemies = [new enemy({x: 1000, y: 200})];
-    const weapons = [new Weapon({x: player.position.x, y: player.position.y})];
-    let projectiles = [];
-    const floor = new Floor({ y: canvas.height - 20, height: 20 });
-    platforms.push(floor);
     
     
     const keys = {
@@ -234,8 +295,7 @@ function start() {
         left: { pressed:false},
     }
     
-    let scrollOffSet = 0;
-    
+   
     function animate(){
         requestAnimationFrame(animate);
         c.clearRect(0, 0, canvas.width, canvas.height);
@@ -243,6 +303,7 @@ function start() {
         platforms.forEach(platform => {platform.draw();})
         enemies.forEach(enemy => {enemy.update();})
         weapons.forEach(weapon => {weapon.draw();})
+        deathHoles.forEach(deathHole => {deathHole.draw();})
     
         // Update projectiles
         projectiles.forEach(projectile => { projectile.update(); });
@@ -250,29 +311,24 @@ function start() {
         if (keys.right.pressed && player.position.x < 650) {player.velocity.x = 5;} 
         else if (keys.left.pressed && player.position.x > 100){player.velocity.x = -5;}
         else {  player.velocity.x = 0;
-                if (keys.right.pressed) {platforms.forEach(platform => {platform.position.x -= 5; scrollOffSet += 5; if (scrollOffSet > 5000) {alert('You Win'); restartGame(); }})}
+                if (keys.right.pressed) {platforms.forEach(platform => {platform.position.x -= 5; scrollOffSet += 5; if (scrollOffSet > 5000) {alert('You Win'); restartGame(); }}); for (const deathHole of deathHoles) {
+                    deathHole.x -= 5;
+                }}
             
         }
     
     // Platform collision detection
         platforms.forEach(platform => {
-        if (player.position.y + player.height <= platform.position.y && 
-            player.position.y + player.height + player.velocity.y >= platform.position.y && 
-            player.position.x + player.width >= platform.position.x &&
-            player.position.x <= platform.position.x + platform.width){
-            player.velocity.y = 0;
-        }
-    })
+            if (player.position.y + player.height <= platform.position.y && 
+                player.position.y + player.height + player.velocity.y >= platform.position.y && 
+                player.position.x + player.width >= platform.position.x &&
+                player.position.x <= platform.position.x + platform.width){
+                player.velocity.y = 0;
+            }
+        })
     }
     
-    let backgroundX = 0;
-    let backgroundY = 0;
-    
-    function updateBackground() {
-        backgroundX = -player.position.x * 0.5;
-        backgroundY = -player.position.y * 0.5;
-        document.getElementById("game").style.backgroundPosition = `${backgroundX}px ${backgroundY}px`;
-    }
+
     
     function restartGame() {
         // Reset player properties
@@ -295,6 +351,15 @@ function start() {
         platforms.push(new Platform({x: 200, y: 300}));
         platforms.push(new Platform({x: 400, y: 250}));
     }
+
+    const player = new Player();
+    const platforms = [new Platform({x:100, y:900}), new Platform({x: 500, y: 800})];
+    let enemies = [new enemy({x: 1000, y: 200})];
+    const weapons = [new Weapon({x: player.position.x, y: player.position.y})];
+    let projectiles = [];
+    const floor = new Floor({ y: canvas.height - 20, height: 20 });
+    platforms.push(floor);
+    let scrollOffSet = 0;
     
     animate();
     
@@ -309,7 +374,11 @@ function start() {
                 keys.right.pressed = true;
             break;
             case 87:
-                player.velocity.y -= 10;
+                console.log(player.onGround);
+                if(player.onGround) {
+                player.velocity.y = -20;
+                player.onGround = false;
+                }
             break;
         }
     
@@ -326,7 +395,7 @@ function start() {
                 keys.right.pressed = false;
             break;
             case 87:
-                player.velocity.y -= 10;
+                // player.velocity.y -= 10;
             break;
         }
     
