@@ -135,7 +135,7 @@ function start() {
             this.velocity.y += gravity;
             this.position.y += this.velocity.y;
             this.position.x += this.velocity.x;
-            this.chase(player);
+            // this.chase(player);
         
             // Check for collision with floor
             if (this.position.y + this.height >= floor.position.y) {
@@ -145,7 +145,7 @@ function start() {
         
             // Check for collision with edges of canvas
             if (this.position.x + this.width >= canvas.width || this.position.x <= 0) {
-                this.velocity.x = -this.velocity.x;
+                this.velocity.x =- this.velocity.x;
             }
     
             // Check for collision with platforms
@@ -331,40 +331,20 @@ function start() {
         }
     
     });
-    
-    let mouse = { x: 0, y: 0 };
-    
-    // Update mouse position when the mouse moves
-    document.addEventListener('mousemove', (event) => {
-        mouse.x = event.clientX;
-        mouse.y = event.clientY;
-    });
-    
-    function shoot() {
-        // Calculate the distance from the player to the mouse
-        let xDist = mouse.x - player.position.x;
-        let yDist = mouse.y - player.position.y;
-        let distance = Math.sqrt(xDist * xDist + yDist * yDist) / 5;  // Divide by 2 to decrease distance
-    
-        // Calculate the x and y velocity required to reach the mouse
-        let xVelocity = xDist / distance;
-        let yVelocity = yDist / distance;
-    
-        // Create a new projectile with the calculated velocities
+
+    document.addEventListener("keydown", shoot);
+
+    function shoot(event) {
+    if (event.code === "Space") {
         let projectile = new Projectile({
-            x: player.position.x,
+            x: player.position.x + player.width / 2,
             y: player.position.y,
-            velocity: { x: xVelocity, y: yVelocity },
+            velocity: { x: 5, y: 0 },
         });
-    
-        // Add the projectile to the list of projectiles
         projectiles.push(projectile);
     }
-    
-    
-    // Add a click event listener to the canvas
-    canvas.addEventListener('click', shoot);
-    
+}
+
     
     setInterval(() => {
         enemies.forEach(enemy => {
