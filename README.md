@@ -1,5 +1,5 @@
 # Game-Project
-Megaman-like Game that I want to do for my first Ironhack Project
+Megaman Clone that I want to do for my first Ironhack Project
 
 Current Problems and TODOs:
 
