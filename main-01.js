@@ -1,19 +1,15 @@
-
-// Display starting screen
 const startScreen = document.createElement('div');
+startScreen.classList.add("start-screen");
 const startScreenText = document.createElement('p');
 startScreenText.style.color = "red";
 startScreenText.style.fontSize = "50px";
-startScreen.style.position = "absolute";
-startScreen.style.top = "50%";
-startScreen.style.left = "50%";
-startScreen.style.transform = "translate(-50%, -50%)";
-startScreenText.innerHTML = "Press Enter to start";
 startScreen.appendChild(startScreenText);
 document.querySelector('body').appendChild(startScreen);
 
-
-
+// Add the CSS styles here
+const backgroundBezel = document.createElement('div');
+backgroundBezel.classList.add("background-bezel");
+document.querySelector('body').appendChild(backgroundBezel);
 
 // Listen for key press event
 document.addEventListener("keydown", startGame);
@@ -38,9 +34,39 @@ function start() {
     canvas.height = innerHeight;
     const gravity = 0.5;
 
+    window.removeEventListener("keydown",event => {
+        if (event.code === "KeyG") {
+          start();
+        }
+      });
 
-    class Player {
-        constructor(){
+    class Sprite {
+        constructor({position, imageSrc, width, height}) {
+            this.position = position;
+            this.image = new Image();
+            this.image.onload = () => this.loaded = true;
+            this.image.src = imageSrc;
+            this.loaded = false;
+            this.width = width;
+            this.height = height;
+        }
+
+        draw() {
+            if (!this.loaded) {console.log("no picture loaded") ; return}
+            c.drawImage(this.image, this.position.x, this.position.y, this.width, this.height);
+        }
+    }
+
+    const backgroundLevel1 = new Sprite({
+        position: {x: 0, y: 0},
+        imageSrc: 'img/backgroundLevel1.jpg',
+        height: canvas.height,
+        width: canvas.width
+    });
+    
+    class Player extends Sprite{
+        constructor({imageSrc}){
+            super({imageSrc});
             this.position = {x: 100, y: 100};
             this.width = 100;
             this.height = 100;
@@ -48,15 +74,9 @@ function start() {
             this.fillRect = 'red';
             this.onGround = false;
             this.health = 100;
+            this.imageSrc = imageSrc;
         }
         
-    
-        draw() {
-            // Draw the player's background image
-            c.fillStyle = this.fillRect;
-            c.fillRect(this.position.x, this.position.y, this.width, this.height);
-        }
-    
         update() {
             this.velocity.y += gravity;
             this.position.y += this.velocity.y;
@@ -84,6 +104,27 @@ function start() {
                     }
                  }
             }
+
+            // Check for collision with enemies
+            for (const enemy of enemies) {
+                if (this.position.x + this.width >= enemy.position.x && this.position.x <= enemy.position.x + enemy.width) {
+                    if (this.position.y + this.height >= enemy.position.y && this.position.y <= enemy.position.y + enemy.height) {
+                        // Player has collided with an enemy
+                        // Trigger enemy collision event
+                        // can only be triggered once per enemy per second
+                        if (enemy.lastCollisionTime === undefined || enemy.lastCollisionTime < Date.now() - 1000) { 
+                            enemy.lastCollisionTime = Date.now();
+
+                            // Reduce player health
+                            this.health -= 10;
+                            console.log("You have been hit by an enemy!");
+                            // player is knocked back
+                            this.position.x -= 30;
+                        }
+                    }
+                }
+            }
+
         
             // Check for collision with floor
             if (this.position.y + this.height >= floor.position.y) {
@@ -113,7 +154,7 @@ function start() {
                         // Player has fallen into a death hole
                         // Trigger death event
                         this.health = 0;
-                        this.velocity.y += gravity;
+                        //this.velocity.y += gravity;
                         console.log("You fell into a death hole and died!");
                     }
                 }
@@ -123,6 +164,7 @@ function start() {
                 // Player has died
                 // Trigger game over event
                 console.log("Game over!");
+                gameOver();
                 //restartGame();
             }
         
@@ -133,11 +175,11 @@ function start() {
     }
 
     class DeathHole {
-        constructor(x, y, width, height) {
+        constructor(x, width) {
             this.x = x;
-            this.y = y;
+            this.y = canvas.height-70;
             this.width = width;
-            this.height = height;
+            this.height = 100;
             this.fillStyle = 'black';
         }
 
@@ -148,37 +190,24 @@ function start() {
     }
     
     const deathHoles = [
-        new DeathHole(700, canvas.height-25, 300, 50),
-        new DeathHole(1000, canvas.height-25, 500, 50)
+        new DeathHole(700, 700,),
+        new DeathHole(3000, 500,)
     ];
 
-
-    class Sprite {
-        constructor({position, imageSrc, width, height}) {
-            this.position = position;
-            this.image = new Image();
-            this.image.onload = () => this.loaded = true;
-            this.image.src = imageSrc;
-            this.loaded = false;
-            this.width = width;
-            this.height = height;
+    class HealthBar {
+        constructor(health){
+            this.position = {x: 100, y: canvas.height/2 - 150};
+            this.width = 50;
+            this.height = health*3;
+            this.fillStyle = 'green'; 
         }
 
-        draw() {
-            if (!this.loaded) {console.log("no picture loaded") ; return}
-            c.drawImage(this.image, this.position.x, this.position.y, this.width, this.height);
+        draw(){
+            c.fillStyle = this.fillStyle;
+            c.fillRect(this.position.x, this.position.y, this.width, player.health*3);
         }
     }
-
-    const backgroundLevel1 = new Sprite({
-        position: {x: 0, y: 0},
-        imageSrc: 'img/backgroundLevel1.jpg',
-        height: canvas.height,
-        width: canvas.width
-    });
-    
-    
-    
+ 
     class Platform {
         constructor({x, y}){
             this.position = {x, y};
@@ -194,14 +223,14 @@ function start() {
     class enemy {
         constructor({x, y, health = 100}){
             this.position = {x, y};
-            this.width = 400;
-            this.height = 400;
+            this.width = 150;
+            this.height = 150;
             this.velocity = {x: 0, y: 0};
             this.health = health;
         }
         
         draw(){
-            c.fillStyle = 'green';
+            c.fillStyle = 'red';
             c.fillRect(this.position.x, this.position.y, this.width, this.height);
         }
     
@@ -312,23 +341,45 @@ function start() {
         }
     }
     
-    
-    
     const keys = {
         right: { pressed:false},
         left: { pressed:false},
     }
+
+    window.addEventListener("keydown", event => {
+        if (event.code === "KeyG") {
+            start();
+        }
+    });
     
-   
+
+    function gameOver(){
+        // stop the animation
+        // clear the canvas
+        scrollOffSet = 0;
+        c.clearRect(0, 0, canvas.width, canvas.height);
+        c.fillStyle = 'black';
+        c.fillRect(0, 0, canvas.width, canvas.height);
+        c.fillStyle = 'red';
+        c.font = '100px Arial';
+        c.fillText('GAME OVER', 100, 200);
+        c.font = '50px Arial';
+        c.fillText('Press G to restart', 100, 300);
+        // call start function when space is pressed
+    };
+
+    
     function animate(){
         requestAnimationFrame(animate);
         c.clearRect(0, 0, canvas.width, canvas.height);
         backgroundLevel1.draw();
         player.update();
-        platforms.forEach(platform => {platform.draw();})
-        enemies.forEach(enemy => {enemy.update();})
-        weapons.forEach(weapon => {weapon.draw();})
-        deathHoles.forEach(deathHole => {deathHole.draw();})
+        platforms.forEach(platform => {platform.draw();});
+        enemies.forEach(enemy => {enemy.update();});
+        weapons.forEach(weapon => {weapon.draw();});
+        deathHoles.forEach(deathHole => {deathHole.draw();});
+        console.log(player.health);
+        healthbar.draw();
     
         // Update projectiles
         projectiles.forEach(projectile => { projectile.update(); });
@@ -336,7 +387,7 @@ function start() {
         if (keys.right.pressed && player.position.x < 650) {player.velocity.x = 5;} 
         else if (keys.left.pressed && player.position.x > 100){player.velocity.x = -5;}
         else {  player.velocity.x = 0;
-                if (keys.right.pressed) {platforms.forEach(platform => {platform.position.x -= 5; scrollOffSet += 5; if (scrollOffSet > 5000) {alert('You Win'); restartGame(); }}); for (const deathHole of deathHoles) {
+                if (keys.right.pressed) {platforms.forEach(platform => {platform.position.x -= 5; scrollOffSet += 5; if (scrollOffSet > 5000) {alert('You Win');}}); for (const deathHole of deathHoles) {
                     deathHole.x -= 5;
                 }}
             
@@ -352,39 +403,17 @@ function start() {
             }
         })
     }
-    
 
-    
-    function restartGame() {
-        // Reset player properties
-        player.position.x = 100;
-        player.position.y = 100;
-        player.health = 100;
-        player.velocity.x = 0;
-        player.velocity.y = 0;
-        scrollOffSet = 0;
-    
-        // Remove all enemies
-        enemies = [];
-    
-        // Spawn new enemies
-        enemies.push(new enemy({x: 500, y: 200}));
-        enemies.push(new enemy({x: 700, y: 150}));
-    
-        // Reset platforms
-        platforms = [];
-        platforms.push(new Platform({x: 200, y: 300}));
-        platforms.push(new Platform({x: 400, y: 250}));
-    }
-
-    const player = new Player();
+    const player = new Player({imageSrc: './img/megaman/idle-right.png' });
     const platforms = [new Platform({x:100, y:900}), new Platform({x: 500, y: 800})];
     let enemies = [new enemy({x: 1000, y: 200})];
     const weapons = [new Weapon({x: player.position.x, y: player.position.y})];
     let projectiles = [];
-    const floor = new Floor({ y: canvas.height - 20, height: 20 });
+    const floor = new Floor({ y: canvas.height - 60, height: 60 });
     platforms.push(floor);
     let scrollOffSet = 0;
+    const healthbar = new HealthBar(player.health);
+   
     
     animate();
     
@@ -438,8 +467,7 @@ function start() {
         projectiles.push(projectile);
     }
 }
-
-    
+   
     setInterval(() => {
         enemies.forEach(enemy => {
             const direction = Math.random() < 0.5 ? -1 : 1;

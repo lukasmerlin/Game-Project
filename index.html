@@ -5,6 +5,7 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Document</title>
+    <link rel="stylesheet" type="text/css" href="style.css">
 
 </head>
 <body>
@@ -12,15 +13,17 @@
         body {
             margin: 0;
             padding: 0;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            padding-top: 12vw;
+            height: 100vh;
+            width: 100vw;
         }
-
         canvas {
-            width: 1000px;
-            height: 600px;
+            width: 73vw;
+            height: 93vh;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 1;
         }
 
     </style>
@@ -30,6 +33,7 @@
 </body>
 <script src="player.js" type ="module"></script>
 <script src="main-01.js" type ="module"></script>
+
 </html>
 
 
