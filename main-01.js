@@ -6,6 +6,8 @@ startScreenText.style.fontSize = "50px";
 startScreen.appendChild(startScreenText);
 document.querySelector('body').appendChild(startScreen);
 
+
+
 // Add the CSS styles here
 const backgroundBezel = document.createElement('div');
 backgroundBezel.classList.add("background-bezel");
@@ -44,7 +46,9 @@ function start() {
         constructor({position, imageSrc, width, height}) {
             this.position = position;
             this.image = new Image();
-            this.image.onload = () => this.loaded = true;
+            this.image.onload = () => {
+                this.loaded = true;
+            }
             this.image.src = imageSrc;
             this.loaded = false;
             this.width = width;
@@ -76,17 +80,21 @@ function start() {
             this.health = 100;
             this.imageSrc = imageSrc;
         }
+    
+        // build new draw function for animation
         
         update() {
             //console.log(this.velocity.y);
             //console.log(this.position.y);
+            c.fillStyle = 'blue';
+            c.fillRect(this.position.x, this.position.y, this.width, this.height);
 
             this.position.y += this.velocity.y;
             this.position.x += this.velocity.x;
         
             // Update weapon position to match player position
-            weapons[0].position.x = this.position.x;
-            weapons[0].position.y = this.position.y;
+            weapons[0].position.x = this.position.x + 50;
+            weapons[0].position.y = this.position.y + 50;
     
             platforms.forEach(platform =>{
                 if (this.position.x < platform.position.x + platform.width && 
@@ -112,33 +120,7 @@ function start() {
             if (!this.onGround){
                 this.velocity.y += gravity;      
             }
-
-/*
-            if (this.position.x + this.width >= platform.position.x && this.position.x <= platform.position.x + platform.width) {
-                if (this.position.y + this.height >= platform.position.y && this.position.y <= platform.position.y + platform.height) {
-                    // Check if player is colliding from below
-                    if (this.position.y + this.height <= platform.position.y + platform.height && this.position.y + this.height >= platform.position.y  && this.velocity.y > 0 ) {
-                        this.velocity.y = 0;
-                        this.onGround = true;
-                    }
-                    // Check if player is colliding from above
-                    if (this.position.y <= platform.position.y + platform.height && this.position.y >= platform.position.y && this.velocity.y < 0 ) {
-                        this.velocity.y = 0;
-                        this.position.y = platform.position.y + platform.height;
-                    }
-                    // Check if player is colliding from the side
-                    if(this.position.x + this.width >= platform.position.x && this.position.x + this.width <= platform.position.x + platform.width){
-                        this.velocity.x = 0;
-                    }
-                    if(this.position.x <= platform.position.x + platform.width && this.position.x >= platform.position.x){
-                        this.velocity.x = 0;
-                    }
-                }
-            }*/
-            
-                
-            
-
+ 
             // Check for collision with enemies
             for (const enemy of enemies) {
                 if (this.position.x + this.width >= enemy.position.x && this.position.x <= enemy.position.x + enemy.width) {
@@ -152,21 +134,14 @@ function start() {
                             // Reduce player health
                             this.health -= 10;
                             console.log("You have been hit by an enemy!");
+                            console.log("Health: " + this.health);
+
                             // player is knocked back
                             this.position.x -= 30;
                         }
                     }
                 }
             }
-
-        
-            // Check for collision with floor
-            /*
-            if (this.position.y + this.height >= floor.position.y && this.position.x <= floor.position.x + floor.width) {
-                this.position.y = floor.position.y - this.height;
-                this.velocity.y = 0;
-                this.onGround = true;
-            }*/
 
             // Check if player falls off the bottom of the screen
             if (this.position.y > canvas.height) this.health = 0;
@@ -211,11 +186,11 @@ function start() {
     }
 
     class levelEnd {
-        constructor(x, y, width = 100, height = 200) {
+        constructor(x, y) {
             this.x = x;
             this.y = y;
-            this.width = width;
-            this.height = height;
+            this.width = 100;
+            this.height = 200;
             this.fillStyle = 'blue';
         }
 
@@ -274,8 +249,6 @@ function start() {
             this.height = 150;
             this.velocity = {x: 0, y: 0};
             this.health = health;
-            this.onGround = false;
-            this.lastChase = Date.now();
         }
         
         draw(){
@@ -283,9 +256,6 @@ function start() {
             c.fillRect(this.position.x, this.position.y, this.width, this.height);
         }
     
-        move(direction) {
-            this.velocity.x = direction * 5;
-        }
     
         chase(player) {
             // Calculate the direction to move towards the player
@@ -348,7 +318,7 @@ function start() {
                 this.destroy();
             }
         
-           if(player.position.x + 1500 >= this.position.x ){
+           if(player.position.x + 1000 >= this.position.x ){
             this.chase(player);
            }
 
@@ -432,7 +402,8 @@ function start() {
         weapons.forEach(weapon => {weapon.draw();});
         deathHoles.forEach(deathHole => {deathHole.draw();});
         healthbar.draw();
-        endLevel.draw();
+        endLevel1.draw();
+        
     
         // Update projectiles
         projectiles.forEach(projectile => { projectile.update(); });
@@ -444,10 +415,11 @@ function start() {
                     for (const platform of platforms) { platform.position.x -= 5;} 
                     for (const deathHole of deathHoles) { deathHole.x -= 5;}
                     for (const enemy of enemies) { enemy.position.x -= 5;}
+                    endLevel1.x -= 5;
                 }   
         }
 
-        if(player.position.x + player.width > levelEnd.x){
+        if(player.position.x + player.width > endLevel1.x){
             c.clearRect(0, 0, canvas.width, canvas.height);
             c.fillStyle = 'black';
             c.fillRect(0, 0, canvas.width, canvas.height);
@@ -464,7 +436,7 @@ function start() {
     // Platform collision detection
  
     }
-
+    let endLevel1 = new levelEnd(10000, canvas.height - 550);
     const player = new Player({imageSrc: './img/megaman/idle-right.png' });
 
 
@@ -502,7 +474,7 @@ function start() {
         new enemy({x: 7200, y: canvas.height - 700}),
     ];
 
-    const endLevel = new levelEnd({x: 10000, y: canvas.height - 350});
+   
 
     const weapons = [new Weapon({x: player.position.x, y: player.position.y})];
     let projectiles = [];
@@ -518,11 +490,13 @@ function start() {
         switch (keyCode) {
             case 65: 
                 keys.left.pressed = true;
+                player.onGround = false;
             break;
             case 83:
             break;
             case 68:
                 keys.right.pressed = true;
+                player.onGround = false;
             break;
             case 87:
                 if(player.onGround) {
@@ -538,11 +512,13 @@ function start() {
         switch (keyCode) {
             case 65: 
                 keys.left.pressed = false;
+                player.onGround = false;
             break;
             case 83:
             break;
             case 68:
                 keys.right.pressed = false;
+                player.onGround = false;
             break;
             case 87:
                 // player.velocity.y -= 10;
@@ -562,12 +538,4 @@ function start() {
         });
         projectiles.push(projectile);
     }
-
-   
-    setInterval(() => {
-        enemies.forEach(enemy => {
-            const direction = Math.random() < 0.5 ? -1 : 1;
-            enemy.move(direction);
-        });
-    }, 1000);
 }}
