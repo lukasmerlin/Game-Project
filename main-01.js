@@ -86,8 +86,7 @@ function start() {
         update() {
             //console.log(this.velocity.y);
             //console.log(this.position.y);
-            c.fillStyle = 'blue';
-            c.fillRect(this.position.x, this.position.y, this.width, this.height);
+
 
             this.position.y += this.velocity.y;
             this.position.x += this.velocity.x;
@@ -189,14 +188,19 @@ function start() {
         constructor(x, y) {
             this.x = x;
             this.y = y;
-            this.width = 100;
+            this.image = new Image();
+            this.image.onload = () => {
+                this.loaded = true;
+            }
+            this.image.src = "img/win.png";
+            this.loaded = false;
+            this.width = 200;
             this.height = 200;
-            this.fillStyle = 'blue';
         }
 
         draw() {
-            c.fillStyle = this.fillStyle;
-            c.fillRect(this.x, this.y, this.width, this.height);
+            if (!this.loaded) {console.log("no picture loaded win") ; return}
+            c.drawImage(this.image, this.x, this.y, this.width, this.height);
         }
     }
 
@@ -237,7 +241,7 @@ function start() {
             this.height = height;
         }  
         draw(){
-            c.fillStyle = 'green';
+            c.fillStyle = 'brown';
             c.fillRect(this.position.x, this.position.y, this.width, this.height);
         } 
     }
@@ -245,15 +249,21 @@ function start() {
     class enemy {
         constructor({x, y, health = 40}){
             this.position = {x, y};
-            this.width = 150;
-            this.height = 150;
+            this.width = 100;
+            this.height = 100;
             this.velocity = {x: 0, y: 0};
             this.health = health;
+            this.image = new Image();
+            this.image.onload = () => {
+                this.loaded = true;
+            }
+            this.image.src = "img/enemy.png";
+            this.loaded = false;
         }
         
-        draw(){
-            c.fillStyle = 'red';
-            c.fillRect(this.position.x, this.position.y, this.width, this.height);
+        draw() {
+            if (!this.loaded) {console.log("no picture loaded") ; return}
+            c.drawImage(this.image, this.position.x, this.position.y, this.width, this.height);
         }
     
     
@@ -272,6 +282,9 @@ function start() {
             // Check for collision with player
             if (this.position.x + this.width >= player.position.x && this.position.x <= player.position.x + player.width) {
                 this.destroy();
+                player.health -= 10;
+                console.log("You have been hit by an enemy!");
+                player.position.x -= 30;
             }
 
 
@@ -284,10 +297,8 @@ function start() {
     
     
         update() {
-            // this.velocity.y += gravity;
             this.position.y += this.velocity.y;
             this.position.x += this.velocity.x;
-            // this.chase(player);
         
         
             // Check for collision with edges of canvas
@@ -437,7 +448,7 @@ function start() {
  
     }
     let endLevel1 = new levelEnd(10000, canvas.height - 550);
-    const player = new Player({imageSrc: './img/megaman/idle-right.png' });
+    const player = new Player({imageSrc: './img/megaman/stand-shoot-right.png' });
 
 
     const platforms = [
@@ -460,18 +471,25 @@ function start() {
 
     let enemies = [
         new enemy({x: 1400, y: canvas.height - 700}),
-        new enemy({x: 1500, y: canvas.height - 700}),
-        new enemy({x: 2700, y: canvas.height - 700}),
+        new enemy({x: 1700, y: canvas.height - 700}),
+        new enemy({x: 2600, y: canvas.height - 700}),
         new enemy({x: 2800, y: canvas.height - 700}),
-        new enemy({x: 2900, y: canvas.height - 700}),
+        new enemy({x: 3000, y: canvas.height - 700}),
         new enemy({x: 3500, y: canvas.height - 700}),
         new enemy({x: 3800, y: canvas.height - 700}),
         new enemy({x: 5100, y: canvas.height - 700}),
         new enemy({x: 5600, y: canvas.height - 700}),
+        new enemy({x: 5800, y: canvas.height - 700}),
         new enemy({x: 6000, y: canvas.height - 700}),
         new enemy({x: 6400, y: canvas.height - 700}),
         new enemy({x: 6800, y: canvas.height - 700}),
         new enemy({x: 7200, y: canvas.height - 700}),
+        new enemy({x: 7500, y: canvas.height - 700}),
+        new enemy({x: 7800, y: canvas.height - 700}),
+        new enemy({x: 8300, y: canvas.height - 700}),
+        new enemy({x: 8600, y: canvas.height - 700}),
+        new enemy({x: 9000, y: canvas.height - 700}),
+        new enemy({x: 9500, y: canvas.height - 700}),
     ];
 
    
